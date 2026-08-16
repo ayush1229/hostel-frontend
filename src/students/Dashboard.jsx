@@ -8,17 +8,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      navigate("/login");
-      return;
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Failed to parse user data");
+      }
     }
-    
-    try {
-      setUser(JSON.parse(storedUser));
-    } catch (err) {
-      navigate("/login");
-    }
-  }, [navigate]);
+  }, []);
 
   if (!user) return null; // Wait for redirect or load
 

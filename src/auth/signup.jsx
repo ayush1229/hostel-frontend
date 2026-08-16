@@ -32,6 +32,30 @@ function Signup() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+
+  useEffect(() => {
+    if (formData.hostel) {
+      setLoadingRooms(true);
+      apiFetch(`/api/hostels/by-name/${encodeURIComponent(formData.hostel)}/rooms`)
+        .then((data) => {
+          setRooms(data.rooms || []);
+          // Check if selected room still exists in the fetched list
+          if (formData.room && data.rooms && !data.rooms.some(r => String(r.room_number) === String(formData.room))) {
+            setFormData(prev => ({ ...prev, room: "" }));
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch rooms:", err);
+          setRooms([]);
+        })
+        .finally(() => setLoadingRooms(false));
+    } else {
+      setRooms([]);
+      setFormData(prev => ({ ...prev, room: "" }));
+    }
+  }, [formData.hostel]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -313,14 +337,26 @@ function Signup() {
                 ))}
               </select>
 
-              <input
-                type="text"
+              <select
                 name="room"
-                placeholder="Room Number"
                 value={formData.room}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-3 rounded-md mb-4 outline-none focus:border-[#5b0e0e]"
-              />
+                disabled={!formData.hostel || loadingRooms}
+                className="w-full border border-gray-300 p-3 rounded-md mb-4 outline-none focus:border-[#5b0e0e] disabled:bg-gray-100 disabled:text-gray-500"
+              >
+                <option value="">
+                  {!formData.hostel 
+                    ? "Select Hostel First" 
+                    : loadingRooms 
+                      ? "Loading Rooms..." 
+                      : "Select Room"}
+                </option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.room_number}>
+                    {r.room_number} (Capacity: {r.capacity})
+                  </option>
+                ))}
+              </select>
 
               <input
                 type="password"
