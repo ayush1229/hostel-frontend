@@ -6,13 +6,11 @@ export async function apiFetch(
   options = {}
 ) {
 
-  let token = "";
   let role = "";
   try {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       const user = JSON.parse(userStr);
-      token = user.token || "";
       role = user.role || "";
     }
   } catch (e) {
@@ -24,19 +22,11 @@ export async function apiFetch(
       `${BASE_URL}${endpoint}`,
       {
         ...options,
-
+        credentials: "include",
         headers: {
-
           "Content-Type":
             "application/json",
-
-          Authorization:
-            token
-              ? `Bearer ${token}`
-              : "",
-
           role: role || "",
-
           ...(options.headers || {}),
         },
       }

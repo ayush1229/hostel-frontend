@@ -9,19 +9,46 @@ import OutpassForm from "./students/outpass_form.jsx";
 import Dashboard from "./students/Dashboard";
 
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const userStr = localStorage.getItem("user");
+  const role = localStorage.getItem("role")?.toLowerCase();
+
+  // Basic check for logged in student
+  if (!userStr || role !== "student") {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/otp" element={<OtpVerification />} />
         
         {/* Student Routes */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
         <Route path="/student" element={<Navigate to="/" replace />} />
-        <Route path="/outpasses" element={<OutpassLayout />} />
-        <Route path="/add-outpass" element={<OutpassForm />} />
+        
+        <Route path="/outpasses" element={
+          <ProtectedRoute>
+            <OutpassLayout />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/add-outpass" element={
+          <ProtectedRoute>
+            <OutpassForm />
+          </ProtectedRoute>
+        } />
         
         {/* Legacy redirects */}
         <Route path="/outpass" element={<Navigate to="/outpasses" replace />} />

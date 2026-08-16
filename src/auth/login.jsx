@@ -76,14 +76,12 @@ function Login() {
   };
 
   const persistAuth = (data) => {
-    localStorage.setItem("token", data.token || "");
     localStorage.setItem("role", "student");
 
     localStorage.setItem(
       "user",
       JSON.stringify({
         ...data.user,
-        token: data.token,
         role: "student",
       })
     );
@@ -116,7 +114,7 @@ function Login() {
       return { requiresOtp: true };
     }
 
-    if (data?.token) {
+    if (data?.user) {
       persistAuth(data);
       return { success: true };
     }
@@ -188,7 +186,7 @@ function Login() {
           }),
         })) || {};
 
-      if (!data?.token) {
+      if (!data?.user) {
         throw new Error(data?.message || "OTP verification failed");
       }
 
