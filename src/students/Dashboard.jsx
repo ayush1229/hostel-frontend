@@ -94,7 +94,7 @@ export default function Dashboard() {
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <Detail label="Full Name" value={user.name} />
-              <Detail label="Registration No" value={user.registration_number || user.id} />
+              <Detail label="Roll No" value={user.roll_no} />
               <Detail label="Department" value={user.department} />
               <Detail label="Degree & Year" value={`${user.degree_type || "N/A"} - Year ${user.academic_year || user.current_year || "N/A"}`} />
               <Detail label="Contact Number" value={user.phone} />
