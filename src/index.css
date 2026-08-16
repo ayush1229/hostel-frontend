@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Brand */
+  --color-crimson:       #7b1c1c;
+  --color-crimson-dark:  #5a1212;
+  --color-crimson-light: #9e2a2a;
+  --color-crimson-muted: rgba(123,28,28,0.08);
+
+  /* Surfaces */
+  --color-canvas:  #f7f7f5;
+  --color-card:    #ffffff;
+
+  /* Borders */
+  --color-border:      #e2e2de;
+  --color-border-dark: #c8c8c2;
+
+  /* Text */
+  --color-text-primary:   #1a1a18;
+  --color-text-secondary: #6b6b66;
+  --color-text-muted:     #9a9a94;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  /* Spacing extras */
+  --spacing-topnav:  52px;
+  --spacing-sidebar: 200px;
+}
+
+/* Base resets not covered by Tailwind preflight */
+html, body, #root { 
+  height: 100%; 
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body { 
+  font-family: var(--font-sans); 
+  background: var(--color-canvas); 
+}
