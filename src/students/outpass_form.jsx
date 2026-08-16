@@ -21,6 +21,13 @@ const INITIAL_FORM = {
   parent_contact: "",
 };
 
+function getMinDateTime() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0); // start of today
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
 export default function OutpassForm() {
   const navigate = useNavigate();
   const [type, setType] = useState("local");
@@ -215,6 +222,7 @@ export default function OutpassForm() {
                 type="datetime-local"
                 value={form.departure}
                 onChange={(v) => updateField("departure", v)}
+                min={getMinDateTime()}
               />
 
               <Input
@@ -223,6 +231,7 @@ export default function OutpassForm() {
                 type="datetime-local"
                 value={form.arrival}
                 onChange={(v) => updateField("arrival", v)}
+                min={form.departure || getMinDateTime()}
               />
             </div>
 
@@ -247,7 +256,7 @@ export default function OutpassForm() {
 }
 
 /* ================= INPUT ================= */
-function Input({ id, label, type = "text", value, onChange, placeholder = "" }) {
+function Input({ id, label, type = "text", value, onChange, placeholder = "", min }) {
   return (
     <label htmlFor={id} className="block group">
       <span className="block text-xs font-bold text-gray-600 mb-1.5 ml-1 transition-colors group-focus-within:text-[#6d0f16]">
@@ -257,6 +266,7 @@ function Input({ id, label, type = "text", value, onChange, placeholder = "" }) 
         id={id}
         type={type}
         value={value}
+        min={min}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6d0f16] focus:border-transparent bg-white shadow-sm transition-shadow placeholder:text-gray-400"
