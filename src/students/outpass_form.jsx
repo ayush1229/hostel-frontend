@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../utils/api";
 import StudentSidebar from "./StudentSidebar";
 
@@ -30,12 +31,12 @@ function getMinDateTime() {
 
 export default function OutpassForm() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [type, setType] = useState("local");
   const [isEmergency, setIsEmergency] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const requiresPlace = TYPES_REQUIRING_PLACE.includes(type);
 
@@ -85,14 +86,9 @@ export default function OutpassForm() {
 
   /* ================= SUBMIT ================= */
 
-  async function submit() {
-    if (!validate()) return;
-
-    try {
-      setLoading(true);
-      setError("");
-
-      await apiFetch("/api/outpass/create", {
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      return await apiFetch("/api/outpass/create", {
         method: "POST",
         body: JSON.stringify({
           outpass_type: type,
@@ -104,17 +100,25 @@ export default function OutpassForm() {
           is_emergency: isEmergency,
         }),
       });
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outpasses"] });
       setForm(INITIAL_FORM);
       setIsEmergency(false);
       setSubmitted(true);
-    } catch (err) {
+    },
+    onError: (err) => {
       console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setError(err.message || "Failed to submit outpass request.");
     }
+  });
+
+  async function submit() {
+    if (!validate()) return;
+    createMutation.mutate();
   }
+
+  const loading = createMutation.isPending;
 
   return (
     <div className="h-screen flex flex-col lg:flex-row bg-white overflow-hidden font-sans text-gray-800">

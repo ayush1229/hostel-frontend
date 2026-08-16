@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../utils/api";
 import StudentSidebar from "./StudentSidebar";
 
@@ -7,34 +8,25 @@ export default function OutpassLayout() {
   const navigate = useNavigate();
 
   const [selectedOutpass, setSelectedOutpass] = useState(null);
-  const [outpasses, setOutpasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [filter, setFilter] = useState("All");
 
   /* ================= PAGINATION STATE ================= */
   const [page, setPage] = useState(1);
   const limit = 5;
 
-  /* ================= FETCH ================= */
-  async function fetchOutpasses() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await apiFetch("/api/outpass/me");
-      setOutpasses(data?.data || []);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to fetch outpasses");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchOutpasses();
-  }, []);
+  /* ================= FETCH (TANSTACK QUERY) ================= */
+  const {
+    data: outpasses = [],
+    isLoading: loading,
+    error,
+    refetch: fetchOutpasses,
+  } = useQuery({
+    queryKey: ["outpasses"],
+    queryFn: async () => {
+      const res = await apiFetch("/api/outpass/me");
+      return res?.data || [];
+    },
+  });
 
   /* ================= METRICS ================= */
   const metrics = useMemo(() => {
@@ -117,10 +109,10 @@ export default function OutpassLayout() {
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
                 <span className="text-lg">⚠️</span>
-                <p className="text-sm font-medium">{error}</p>
+                <p className="text-sm font-medium">{error.message || "An error occurred"}</p>
               </div>
               <button
-                onClick={fetchOutpasses}
+                onClick={() => fetchOutpasses()}
                 className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
               >
                 Retry
@@ -280,7 +272,6 @@ export default function OutpassLayout() {
         <OutpassModal 
           outpass={selectedOutpass} 
           onClose={() => setSelectedOutpass(null)} 
-          fetchOutpasses={fetchOutpasses}
         />
       )}
     </div>
@@ -317,26 +308,29 @@ function StatusBadge({ status }) {
 }
 
 /* ================= MODAL ================= */
-function OutpassModal({ outpass, onClose, fetchOutpasses }) {
-  const [canceling, setCanceling] = useState(false);
+function OutpassModal({ outpass, onClose }) {
+  const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
   const canCancel = (outpass.status?.toLowerCase() === "pending" || outpass.status?.toLowerCase() === "approved") && outpass.is_active;
 
-  async function handleCancel() {
-    setCanceling(true);
-    try {
-      await apiFetch(`/api/outpass/${outpass.id}/cancel`, {
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      return await apiFetch(`/api/outpass/${outpass.id}/cancel`, {
         method: "PUT",
       });
-      await fetchOutpasses();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outpasses"] });
       onClose();
-    } catch (err) {
+    },
+    onError: (err) => {
       console.error(err);
       alert(err.message || "Failed to cancel outpass");
-    } finally {
-      setCanceling(false);
     }
-  }
+  });
+
+  const handleCancel = () => cancelMutation.mutate();
+  const canceling = cancelMutation.isPending;
 
   if (showConfirm) {
     return (
