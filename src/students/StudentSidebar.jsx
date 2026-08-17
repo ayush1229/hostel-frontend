@@ -1,15 +1,24 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { apiFetch } from "../utils/api";
 
 export default function StudentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiFetch("/api/auth/logout", {
+        method: "POST"
+      });
+    } catch (e) {
+      console.error("Logout error", e);
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/");
+    localStorage.removeItem("role");
+    window.location.href = "/login";
   };
 
   const isActive = (path) => location.pathname === path;

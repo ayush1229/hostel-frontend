@@ -165,11 +165,10 @@ function Signup() {
       const savedUser = {
         ...(data.user || {}),
         role: "student",
-        token: data.token,
       };
 
-      localStorage.setItem("token", data.token || "");
       localStorage.setItem("user", JSON.stringify(savedUser));
+      localStorage.setItem("role", "student");
 
       navigate("/student");
     } catch (err) {
