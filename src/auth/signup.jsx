@@ -162,16 +162,9 @@ function Signup() {
         body: JSON.stringify(payload),
       });
 
-      const savedUser = {
-        ...(data.user || {}),
-        role: "student",
-        token: data.token,
-      };
-
-      localStorage.setItem("token", data.token || "");
-      localStorage.setItem("user", JSON.stringify(savedUser));
-
-      navigate("/student");
+      // Navigate to login after successful signup
+      alert(data.message || "Signup successful. Please login.");
+      navigate("/login");
     } catch (err) {
       console.error(err);
       setError(err.message || "Signup failed");
