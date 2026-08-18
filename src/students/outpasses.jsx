@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
 import { apiFetch } from "../utils/api";
 import StudentSidebar from "./StudentSidebar";
 
@@ -381,7 +382,36 @@ function OutpassModal({ outpass, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 pt-2">
+        <div className="p-6 pt-2 max-h-[80vh] overflow-y-auto">
+          {/* QR Code section for Approved outpasses */}
+          {outpass.status?.toLowerCase() === "approved" && (
+            <div className="mb-6 p-5 bg-gradient-to-br from-amber-50/60 to-orange-50/40 border border-amber-200/80 rounded-3xl flex flex-col sm:flex-row items-center gap-5 shadow-sm">
+              <div className="bg-white p-3 rounded-2xl shadow-md border border-amber-100 flex-shrink-0">
+                <QRCodeSVG
+                  value={outpass.id}
+                  size={140}
+                  level="M"
+                  includeMargin={false}
+                  className="rounded-lg"
+                />
+              </div>
+              <div className="text-center sm:text-left flex-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Active Digital Gate Pass
+                </div>
+                <h4 className="font-bold text-gray-900 text-sm">Gate Barcode / QR</h4>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Show this code to the security guard at the gate scanner to automatically log your <strong>Exit</strong> and <strong>Return</strong>.
+                </p>
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2 text-[11px] text-gray-500 font-mono bg-white/80 px-2.5 py-1.5 rounded-lg border border-amber-100/80">
+                  <span className="font-sans font-bold text-[10px] text-gray-400 uppercase tracking-widest">ID:</span>
+                  <span className="truncate max-w-[200px]">{outpass.id}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
             <Detail label="Type" value={outpass.outpass_type} />
             <Detail label="Place" value={outpass.place_of_visit} />
@@ -409,7 +439,7 @@ function OutpassModal({ outpass, onClose }) {
             <div className="mt-8 flex justify-end">
               <button
                 onClick={() => setShowConfirm(true)}
-                className="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
+                className="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 Cancel Outpass
               </button>
