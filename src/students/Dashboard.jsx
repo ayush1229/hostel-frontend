@@ -91,13 +91,13 @@ export default function Dashboard() {
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <Detail label="Full Name" value={user.name} />
-              <Detail label="Roll No" value={user.roll_no} />
+              <Detail label="Roll No" value={user.roll_no || user.rollno} />
               <Detail label="Department" value={user.department} />
               <Detail label="Degree & Year" value={`${user.degree_type || "N/A"} - Year ${user.academic_year || user.current_year || "N/A"}`} />
               <Detail label="Contact Number" value={user.phone} />
-              <Detail label="Parent Contact" value={user.parent_phone || "N/A"} />
+              <Detail label="Parent Contact" value={user.parent_phone || user.parent_number || user.parent_contact || "N/A"} />
               <Detail label="Hostel" value={user.hostel} />
-              <Detail label="Room Number" value={user.physical_room_id} />
+              <Detail label="Room Number" value={user.room_number || user.room || user.physical_room_id} />
             </div>
           </div>
           

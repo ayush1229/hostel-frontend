@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./auth/login";
 import Signup from "./auth/signup";
-import OtpVerification from "./auth/otpverification";
 import OutpassLayout from "./students/outpasses";
 import OutpassForm from "./students/outpass_form.jsx";
 
@@ -27,7 +26,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/otp" element={<OtpVerification />} />
+        <Route path="/otp" element={<Navigate to="/login" replace />} />
         
         {/* Student Routes */}
         <Route path="/" element={

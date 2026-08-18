@@ -37,7 +37,7 @@ export default function OutpassLayout() {
     let rejected = 0; // Rejected or Cancelled
 
     outpasses.forEach((o) => {
-      const status = o.status?.toLowerCase();
+      const status = (o.status || o.outp_status)?.toLowerCase();
       if (status === "pending") pending++;
       else if (status === "approved") approved++;
       else if (status === "rejected" || status === "cancelled") rejected++;
@@ -51,11 +51,14 @@ export default function OutpassLayout() {
     if (filter === "All") return outpasses;
     if (filter === "Rejected") {
       return outpasses.filter(
-        (o) => o.status?.toLowerCase() === "rejected" || o.status?.toLowerCase() === "cancelled"
+        (o) => {
+          const status = (o.status || o.outp_status)?.toLowerCase();
+          return status === "rejected" || status === "cancelled";
+        }
       );
     }
     return outpasses.filter(
-      (o) => o.status?.toLowerCase() === filter.toLowerCase()
+      (o) => (o.status || o.outp_status)?.toLowerCase() === filter.toLowerCase()
     );
   }, [outpasses, filter]);
 
@@ -124,26 +127,30 @@ export default function OutpassLayout() {
           {!loading && !error && (
             <>
               {/* METRICS CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="flex overflow-x-auto gap-2.5 pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 scrollbar-none">
                 <MetricCard 
                   title="TOTAL" 
                   value={metrics.total} 
                   subtitle="All requests created" 
+                  color="text-[#6d0f16]"
                 />
                 <MetricCard 
                   title="PENDING" 
                   value={metrics.pending} 
                   subtitle="Waiting for approval" 
+                  color="text-amber-600"
                 />
                 <MetricCard 
                   title="APPROVED" 
                   value={metrics.approved} 
                   subtitle="Ready for checkout" 
+                  color="text-green-600"
                 />
                 <MetricCard 
                   title="REJECTED" 
                   value={metrics.rejected} 
                   subtitle="Declined or Cancelled" 
+                  color="text-red-600"
                 />
               </div>
 
@@ -220,7 +227,19 @@ export default function OutpassLayout() {
                               <span className="text-sm font-medium text-gray-600">{o.place_of_visit || "Local"}</span>
                             </td>
                             <td className="px-6 py-4">
-                              <StatusBadge status={o.status} />
+                              <div className="flex flex-col gap-1">
+                                <StatusBadge status={o.status} />
+                                {o.status?.toLowerCase() === "approved" && (
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] font-bold">
+                                    <span className={`px-1.5 py-0.5 rounded ${(o.hostel_std_status === 'Out' || o.std_status === 'Out') ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                      Hostel: {(o.hostel_std_status === 'Out' || o.std_status === 'Out') ? 'Out' : (o.hostel_std_status || "In")}
+                                    </span>
+                                    <span className={`px-1.5 py-0.5 rounded ${o.std_status === 'Out' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                      Gate: {o.std_status || "In"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <button
@@ -280,12 +299,12 @@ export default function OutpassLayout() {
 }
 
 /* ================= METRIC CARD ================= */
-function MetricCard({ title, value, subtitle }) {
+function MetricCard({ title, value, subtitle, color = "text-[#6d0f16]" }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:border-gray-200 transition-colors">
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{title}</p>
-      <p className="text-4xl font-bold text-[#6d0f16] mb-2">{value}</p>
-      <p className="text-xs font-medium text-gray-400">{subtitle}</p>
+    <div className="bg-white border border-gray-100/90 rounded-xl sm:rounded-3xl p-2.5 sm:p-6 shadow-xs sm:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:border-gray-200 transition-all shrink-0 min-w-[110px] sm:min-w-0">
+      <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-2">{title}</p>
+      <p className={`text-base sm:text-4xl font-extrabold sm:font-bold ${color} mb-0 sm:mb-2 tabular-nums`}>{value}</p>
+      {subtitle && <p className="hidden sm:block text-xs font-medium text-gray-400 truncate">{subtitle}</p>}
     </div>
   );
 }
@@ -312,7 +331,10 @@ function StatusBadge({ status }) {
 function OutpassModal({ outpass, onClose }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
-  const canCancel = (outpass.status?.toLowerCase() === "pending" || outpass.status?.toLowerCase() === "approved") && outpass.is_active;
+  const [cancelError, setCancelError] = useState("");
+
+  const isAlreadyOut = outpass.std_status === "Out" || outpass.hostel_std_status === "Out";
+  const canCancel = (outpass.status?.toLowerCase() === "pending" || outpass.status?.toLowerCase() === "approved") && outpass.is_active && !isAlreadyOut;
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
@@ -325,12 +347,15 @@ function OutpassModal({ outpass, onClose }) {
       onClose();
     },
     onError: (err) => {
-      console.error(err);
-      alert(err.message || "Failed to cancel outpass");
+      console.error("Cancel outpass error:", err);
+      setCancelError(err.message || "Failed to cancel outpass. Please try again.");
     }
   });
 
-  const handleCancel = () => cancelMutation.mutate();
+  const handleCancel = () => {
+    setCancelError("");
+    cancelMutation.mutate();
+  };
   const canceling = cancelMutation.isPending;
 
   if (showConfirm) {
@@ -341,17 +366,32 @@ function OutpassModal({ outpass, onClose }) {
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
           <h3 className="font-bold text-xl text-gray-900 mb-2">Cancel Outpass?</h3>
-          <p className="text-sm font-medium text-gray-500 mb-7">This action cannot be undone.</p>
+          <p className="text-sm font-medium text-gray-500 mb-5">This action cannot be undone.</p>
+
+          {/* INLINE ERROR ALERT */}
+          {cancelError && (
+            <div className="mb-5 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium flex items-start gap-2 text-left">
+              <span className="text-base shrink-0 leading-tight">⚠️</span>
+              <div className="flex-1">
+                <p className="font-bold">Cannot Cancel</p>
+                <p className="mt-0.5">{cancelError}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
             <button
               onClick={handleCancel}
               disabled={canceling}
-              className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition disabled:opacity-50"
+              className="w-full py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl font-bold transition disabled:opacity-50 shadow-sm"
             >
-              {canceling ? "Canceling..." : "Yes, Cancel"}
+              {canceling ? "Canceling..." : "Yes, Cancel Outpass"}
             </button>
             <button
-              onClick={() => setShowConfirm(false)}
+              onClick={() => {
+                setCancelError("");
+                setShowConfirm(false);
+              }}
               disabled={canceling}
               className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition disabled:opacity-50"
             >
@@ -381,15 +421,14 @@ function OutpassModal({ outpass, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 pt-2 max-h-[80vh] overflow-y-auto">
+        <div className="p-6 pt-2 max-h-[80vh] overflow-y-auto space-y-6">
           {/* QR Code section for Approved outpasses */}
           {outpass.status?.toLowerCase() === "approved" && (
-            <div className="mb-6 p-5 bg-gradient-to-br from-amber-50/60 to-orange-50/40 border border-amber-200/80 rounded-3xl flex flex-col sm:flex-row items-center gap-5 shadow-sm">
-              <div className="bg-white p-3 rounded-2xl shadow-md border border-amber-100 flex-shrink-0">
+            <div className="p-5 bg-gradient-to-br from-amber-50/60 to-orange-50/40 border border-amber-200/80 rounded-3xl flex flex-col sm:flex-row items-center gap-5 shadow-sm">
+              <div className="bg-white p-3 rounded-2xl shadow-md border border-amber-100 shrink-0">
                 <QRCodeSVG
                   value={outpass.id}
-                  size={140}
+                  size={130}
                   level="M"
                   includeMargin={false}
                   className="rounded-lg"
@@ -433,9 +472,11 @@ function OutpassModal({ outpass, onClose }) {
               }
             />
             <Detail label="Status" value={outpass.status} />
+            <Detail label="Hostel Status" value={(outpass.hostel_std_status === 'Out' || outpass.std_status === 'Out') ? 'Outside Hostel' : 'Inside Hostel'} />
+            <Detail label="Campus Gate Status" value={outpass.std_status === 'Out' ? 'Outside Campus' : 'Inside Campus'} />
           </div>
 
-          {canCancel && (
+          {canCancel ? (
             <div className="mt-8 flex justify-end">
               <button
                 onClick={() => setShowConfirm(true)}
@@ -444,7 +485,12 @@ function OutpassModal({ outpass, onClose }) {
                 Cancel Outpass
               </button>
             </div>
-          )}
+          ) : isAlreadyOut && outpass.is_active ? (
+            <div className="mt-6 bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-2xl text-xs font-medium flex items-center gap-2.5">
+              <span className="text-base">ℹ️</span>
+              <span>This outpass cannot be cancelled because you have already exited campus/hostel.</span>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
