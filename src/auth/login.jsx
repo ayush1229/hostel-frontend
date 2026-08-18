@@ -76,6 +76,10 @@ function Login() {
   };
 
   const persistAuth = (data) => {
+    const token = data.token || data.accessToken || data.user?.token || "";
+    if (token) {
+      localStorage.setItem("token", token);
+    }
     localStorage.setItem("role", "student");
 
     localStorage.setItem(
@@ -83,6 +87,7 @@ function Login() {
       JSON.stringify({
         ...data.user,
         role: "student",
+        token: token || data.user?.token,
       })
     );
 

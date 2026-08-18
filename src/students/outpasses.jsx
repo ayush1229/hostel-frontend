@@ -25,7 +25,10 @@ export default function OutpassLayout() {
     queryKey: ["outpasses"],
     queryFn: async () => {
       const res = await apiFetch("/api/outpass/me");
-      return res?.data || [];
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.outpasses)) return res.outpasses;
+      return [];
     },
   });
 
