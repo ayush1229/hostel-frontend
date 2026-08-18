@@ -80,6 +80,15 @@ export default function OutpassForm() {
       return false;
     }
 
+    if (type === "local") {
+      const depDate = new Date(form.departure).toDateString();
+      const arrDate = new Date(form.arrival).toDateString();
+      if (depDate !== arrDate) {
+        setError("For a Local outpass, departure and return must be on the same day.");
+        return false;
+      }
+    }
+
     setError("");
     return true;
   }
