@@ -61,15 +61,16 @@ export async function apiFetch(
   if (!response.ok) {
     const errorMsg = (data.message || data.error || "").toLowerCase();
 
-    if (
-      !isAuthEndpoint &&
-      (response.status === 401 ||
-       response.status === 403 ||
-       errorMsg.includes("log in again") ||
-       errorMsg.includes("session has expired") ||
-       errorMsg.includes("unauthorized") ||
-       errorMsg.includes("session expired"))
-    ) {
+    const isSessionExpired = 
+      response.status === 401 && (
+        errorMsg.includes("log in again") ||
+        errorMsg.includes("session has expired") ||
+        errorMsg.includes("token is required") ||
+        errorMsg.includes("invalid or expired token") ||
+        errorMsg.includes("unauthorized")
+      );
+
+    if (!isAuthEndpoint && isSessionExpired) {
       localStorage.clear();
       window.location.href = "/login";
       throw new Error("Your session has expired. Redirecting to login...");
