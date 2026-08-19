@@ -17,6 +17,15 @@ function Login() {
   const navigate =
     useNavigate();
 
+  // Redirect already-logged-in users away from the login page
+  useEffect(() => {
+    const role = localStorage.getItem("role")?.toLowerCase();
+    const user = localStorage.getItem("user");
+    if (role === "student" && user) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
 
 
   const [formData, setFormData] =
@@ -85,6 +94,14 @@ function Login() {
         role: "student",
       })
     );
+
+    // Persist session info for silent token refresh
+    if (data.refreshToken) {
+      localStorage.setItem("refreshToken", data.refreshToken);
+    }
+    if (data.sessionId) {
+      localStorage.setItem("sessionId", data.sessionId);
+    }
 
     navigate("/student");
   };

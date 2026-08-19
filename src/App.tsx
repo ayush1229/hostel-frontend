@@ -20,12 +20,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+// Redirect already logged-in students away from public pages (login/signup)
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const userStr = localStorage.getItem("user");
+  const role = localStorage.getItem("role")?.toLowerCase();
+
+  if (userStr && role === "student") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
         <Route path="/otp" element={<Navigate to="/login" replace />} />
         
         {/* Student Routes */}
