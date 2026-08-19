@@ -1,5 +1,6 @@
-const BASE_URL =
-  (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const isRenderHost = typeof window !== "undefined" && window.location.hostname.includes("onrender.com");
+const DEFAULT_URL = isRenderHost ? "https://hostel-backend-cveq.onrender.com" : "http://localhost:4000";
+const BASE_URL = (import.meta.env.VITE_API_URL || DEFAULT_URL).replace(/\/$/, "");
 
 export async function apiFetch(
   endpoint,
@@ -57,15 +58,16 @@ export async function apiFetch(
   if (!response.ok) {
     const errorMsg = (data.message || data.error || "").toLowerCase();
 
-    if (
-      !isAuthEndpoint &&
-      (response.status === 401 ||
-       response.status === 403 ||
-       errorMsg.includes("log in again") ||
-       errorMsg.includes("session has expired") ||
-       errorMsg.includes("unauthorized") ||
-       errorMsg.includes("session expired"))
-    ) {
+    const isSessionExpired = 
+      response.status === 401 && (
+        errorMsg.includes("log in again") ||
+        errorMsg.includes("session has expired") ||
+        errorMsg.includes("token is required") ||
+        errorMsg.includes("invalid or expired token") ||
+        errorMsg.includes("unauthorized")
+      );
+
+    if (!isAuthEndpoint && isSessionExpired) {
       localStorage.clear();
       window.location.href = "/login";
       throw new Error("Your session has expired. Redirecting to login...");
