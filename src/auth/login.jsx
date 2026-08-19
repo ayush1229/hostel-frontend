@@ -85,8 +85,8 @@ function Login() {
   };
 
   const persistAuth = (data) => {
+    // Only store non-sensitive display data — tokens live in HttpOnly cookies set by the server
     localStorage.setItem("role", "student");
-
     localStorage.setItem(
       "user",
       JSON.stringify({
@@ -94,14 +94,6 @@ function Login() {
         role: "student",
       })
     );
-
-    // Persist session info for silent token refresh
-    if (data.refreshToken) {
-      localStorage.setItem("refreshToken", data.refreshToken);
-    }
-    if (data.sessionId) {
-      localStorage.setItem("sessionId", data.sessionId);
-    }
 
     navigate("/student");
   };
